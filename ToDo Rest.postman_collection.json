@@ -1,0 +1,267 @@
+{
+  "info": {
+    "_postman_id": "4f06920f-20a7-436c-a315-c1065700e897",
+    "name": "ToDo Rest",
+    "description": "Colección para probar la aplicación ToDo REST.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "53925277"
+  },
+  "item": [
+    {
+      "name": "Register",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n    \"username\" : \"prueba1\",\r\n    \"email\" : \"prueba1@example.com\",\r\n    \"password\" : \"password123\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{base_url}}/auth/register",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "auth",
+            "register"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Create task",
+      "request": {
+        "auth": {
+          "type": "basic",
+          "basic": [
+            {
+              "key": "password",
+              "value": "password123",
+              "type": "string"
+            },
+            {
+              "key": "username",
+              "value": "prueba1",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n  \"title\": \"Terminar informe\",\r\n  \"description\": \"Completar el informe mensual\",\r\n  \"deadline\": \"2026-04-25T18:30:00\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{base_url}}/task/",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "task",
+            ""
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Get all task",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "basic",
+          "basic": [
+            {
+              "key": "password",
+              "value": "password123",
+              "type": "string"
+            },
+            {
+              "key": "username",
+              "value": "prueba1",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/task/",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "task",
+            ""
+          ]
+        },
+        "description": "This is a GET request and it is used to \"get\" data from an endpoint. There is no request body for a GET request, but you can use query parameters to help specify the resource you want data on (e.g., in this request, we have `id=1`).\n\nA successful GET response will have a `200 OK` status, and should include some kind of response body - for example, HTML web content or JSON data."
+      },
+      "response": []
+    },
+    {
+      "name": "Get task by id",
+      "request": {
+        "auth": {
+          "type": "basic",
+          "basic": [
+            {
+              "key": "password",
+              "value": "password123",
+              "type": "string"
+            },
+            {
+              "key": "username",
+              "value": "prueba1",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/task/1",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "task",
+            "1"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Edit task",
+      "request": {
+        "auth": {
+          "type": "basic",
+          "basic": [
+            {
+              "key": "password",
+              "value": "password123",
+              "type": "string"
+            },
+            {
+              "key": "username",
+              "value": "prueba1",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "PUT",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n  \"title\": \"Terminar informe\",\r\n  \"description\": \"Completar el informe trimestral\",\r\n  \"deadline\": \"2026-08-25T18:30:00\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{base_url}}/task/452",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "task",
+            "452"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Delete task",
+      "request": {
+        "auth": {
+          "type": "basic",
+          "basic": [
+            {
+              "key": "password",
+              "value": "password123",
+              "type": "string"
+            },
+            {
+              "key": "username",
+              "value": "prueba1",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/task/452",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "task",
+            "452"
+          ]
+        }
+      },
+      "response": []
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          ""
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          ""
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "id",
+      "value": "1"
+    },
+    {
+      "key": "base_url",
+      "value": "https://template.postman-echo.com"
+    }
+  ]
+}
