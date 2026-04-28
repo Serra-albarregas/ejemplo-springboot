@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>TaskFlow — ToDo REST Client</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Mono:wght@400;500&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<style>
+:root {
+  --bg: #0e0f11;
+  --surface: #16181c;
+  --surface2: #1d2026;
+  --border: #2a2d35;
+  --accent: #c8f04a;
+  --accent-dim: rgba(200,240,74,0.12);
+  --accent-dim2: rgba(200,240,74,0.06);
+  --text: #e8eaf0;
+  --text-2: #8a8fa0;
+  --text-3: #555a6a;
+  --red: #f06060;
+  --red-dim: rgba(240,96,96,0.12);
+  --green: #4af0a0;
+  --green-dim: rgba(74,240,160,0.1);
+  --amber: #f0c84a;
+  --amber-dim: rgba(240,200,74,0.1);
+  --radius: 12px;
+  --radius-sm: 8px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:'Outfit',sans-serif;font-weight:400;min-height:100vh;display:flex;flex-direction:column}
+/* SCROLLBAR */
+::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
+
+/* ── HEADER ── */
+header{border-bottom:1px solid var(--border);padding:0 2rem;display:flex;align-items:center;justify-content:space-between;height:64px;position:sticky;top:0;background:rgba(14,15,17,0.85);backdrop-filter:blur(12px);z-index:100}
+.logo{font-family:'DM Serif Display',serif;font-size:1.5rem;color:var(--text);display:flex;align-items:center;gap:10px}
+.logo-dot{width:10px;height:10px;background:var(--accent);border-radius:50%;display:inline-block}
+.auth-badge{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--text-2)}
+.badge{padding:4px 10px;border-radius:20px;font-size:11px;font-weight:500;font-family:'DM Mono',monospace}
+.badge-on{background:var(--green-dim);color:var(--green);border:1px solid rgba(74,240,160,0.2)}
+.badge-off{background:var(--red-dim);color:var(--red);border:1px solid rgba(240,96,96,0.2)}
+.btn-logout{padding:6px 14px;font-size:12px;background:transparent;color:var(--text-3);border:1px solid var(--border);border-radius:var(--radius-sm);cursor:pointer;font-family:'Outfit',sans-serif;font-weight:500;display:inline-flex;align-items:center;gap:6px;transition:all 0.15s}
+.btn-logout:hover{color:var(--red);border-color:rgba(240,96,96,0.4);background:var(--red-dim)}
+
+/* ── LAYOUT ── */
+.layout{display:flex;flex:1;overflow:hidden}
+aside{width:220px;border-right:1px solid var(--border);padding:1.5rem 1rem;display:flex;flex-direction:column;gap:4px;background:var(--surface);flex-shrink:0}
+.nav-label{font-size:10px;font-weight:600;letter-spacing:0.1em;color:var(--text-3);text-transform:uppercase;padding:0 8px;margin-bottom:4px;margin-top:12px}
+.nav-label:first-child{margin-top:0}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:var(--radius-sm);cursor:pointer;font-size:14px;color:var(--text-2);transition:all 0.15s;border:none;background:none;width:100%;text-align:left}
+.nav-item:hover{background:var(--surface2);color:var(--text)}
+.nav-item.active{background:var(--accent-dim);color:var(--accent);font-weight:500}
+.nav-icon{width:18px;height:18px;flex-shrink:0;opacity:0.7}
+.nav-item.active .nav-icon{opacity:1}
+
+/* ── MAIN ── */
+main{flex:1;padding:2rem 2.5rem;overflow-y:auto;max-width:860px}
+.page{display:none}
+.page.active{display:block;animation:fadeUp 0.25s ease both}
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.page-header{margin-bottom:2rem}
+.page-title{font-family:'DM Serif Display',serif;font-size:2rem;color:var(--text);line-height:1.1}
+.page-sub{font-size:14px;color:var(--text-2);margin-top:6px}
+.method-tag{display:inline-block;padding:2px 8px;border-radius:4px;font-family:'DM Mono',monospace;font-size:11px;font-weight:500;margin-right:6px}
+.GET{background:var(--green-dim);color:var(--green)}
+.POST{background:var(--accent-dim);color:var(--accent)}
+.PUT{background:var(--amber-dim);color:var(--amber)}
+.DELETE{background:var(--red-dim);color:var(--red)}
+
+/* ── CARDS ── */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1.5rem;margin-bottom:1.5rem}
+.card-title{font-size:13px;font-weight:600;letter-spacing:0.05em;text-transform:uppercase;color:var(--text-3);margin-bottom:1rem}
+
+/* ── FORM ── */
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.form-group{margin-bottom:14px}
+.form-group label{display:block;font-size:12px;font-weight:500;color:var(--text-2);margin-bottom:6px;letter-spacing:0.02em}
+.form-group input,.form-group textarea{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 13px;font-size:14px;color:var(--text);font-family:'Outfit',sans-serif;transition:border-color 0.15s;outline:none}
+.form-group input:focus,.form-group textarea:focus{border-color:var(--accent)}
+.form-group textarea{resize:vertical;min-height:80px;line-height:1.5}
+.form-group input::placeholder,.form-group textarea::placeholder{color:var(--text-3)}
+
+/* ── BUTTONS ── */
+.btn{display:inline-flex;align-items:center;gap:8px;padding:10px 20px;border-radius:var(--radius-sm);font-size:14px;font-weight:500;font-family:'Outfit',sans-serif;cursor:pointer;border:none;transition:all 0.15s}
+.btn:active{transform:scale(0.97)}
+.btn-primary{background:var(--accent);color:#0e0f11}
+.btn-primary:hover{filter:brightness(1.1)}
+.btn-ghost{background:var(--surface2);color:var(--text-2);border:1px solid var(--border)}
+.btn-ghost:hover{color:var(--text);border-color:var(--text-2)}
+.btn-danger{background:var(--red-dim);color:var(--red);border:1px solid rgba(240,96,96,0.2)}
+.btn-danger:hover{background:rgba(240,96,96,0.2)}
+.btn-sm{padding:6px 12px;font-size:12px}
+
+/* ── CONFIG ── */
+.config-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+
+/* ── RESPONSE ── */
+.response-wrap{margin-top:1.25rem}
+.response-bar{display:flex;align-items:center;justify-content:space-between;padding:8px 14px;border-radius:var(--radius-sm) var(--radius-sm) 0 0;font-size:12px;font-family:'DM Mono',monospace}
+.response-bar.ok{background:var(--green-dim);border:1px solid rgba(74,240,160,0.2);color:var(--green)}
+.response-bar.err{background:var(--red-dim);border:1px solid rgba(240,96,96,0.2);color:var(--red)}
+.response-body{background:rgba(0,0,0,0.4);border:1px solid var(--border);border-top:none;border-radius:0 0 var(--radius-sm) var(--radius-sm);padding:14px;font-family:'DM Mono',monospace;font-size:12px;color:var(--text-2);white-space:pre-wrap;word-break:break-all;max-height:280px;overflow-y:auto;line-height:1.6}
+.spinner{width:16px;height:16px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin 0.6s linear infinite;display:inline-block}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-row{display:flex;align-items:center;gap:10px;color:var(--text-2);font-size:14px;padding:1rem 0}
+
+/* ── TASKS LIST ── */
+.tasks-grid{display:flex;flex-direction:column;gap:10px;margin-top:1.25rem}
+.task-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1rem 1.25rem;display:flex;align-items:flex-start;gap:1rem;transition:border-color 0.15s}
+.task-card:hover{border-color:var(--text-3)}
+.task-num{font-family:'DM Mono',monospace;font-size:11px;color:var(--text-3);min-width:32px;padding-top:2px}
+.task-body{flex:1}
+.task-title{font-size:15px;font-weight:500;color:var(--text);margin-bottom:3px}
+.task-desc{font-size:13px;color:var(--text-2);line-height:1.4}
+.task-deadline{display:inline-flex;align-items:center;gap:5px;margin-top:8px;font-size:11px;font-family:'DM Mono',monospace;color:var(--text-3);background:var(--surface2);padding:3px 8px;border-radius:4px}
+.task-actions{display:flex;gap:6px;flex-shrink:0}
+.empty-state{text-align:center;padding:3rem 0;color:var(--text-3)}
+.empty-icon{font-size:2.5rem;margin-bottom:1rem;opacity:0.4}
+.empty-text{font-size:14px}
+
+/* ── DIVIDER ── */
+.divider{height:1px;background:var(--border);margin:1.5rem 0}
+
+/* ── ENDPOINT PILL ── */
+.endpoint{display:flex;align-items:center;gap:8px;font-family:'DM Mono',monospace;font-size:12px;color:var(--text-2);background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:7px 12px;margin-bottom:1.5rem}
+
+/* ── TOAST ── */
+#toast{position:fixed;bottom:2rem;right:2rem;padding:12px 18px;border-radius:var(--radius);font-size:14px;font-weight:500;opacity:0;transform:translateY(10px);transition:all 0.2s;pointer-events:none;z-index:999}
+#toast.show{opacity:1;transform:translateY(0)}
+#toast.toast-ok{background:var(--green-dim);color:var(--green);border:1px solid rgba(74,240,160,0.3)}
+#toast.toast-err{background:var(--red-dim);color:var(--red);border:1px solid rgba(240,96,96,0.3)}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo"><span class="logo-dot"></span>TaskFlow</div>
+  <div class="auth-badge">
+    <span id="auth-user" style="font-family:'DM Mono',monospace;font-size:12px"></span>
+    <span id="auth-status" class="badge badge-off">Sin sesión</span>
+    <button id="logout-btn" onclick="doLogout()" style="display:none" class="btn btn-logout">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+      Salir
+    </button>
+  </div>
+</header>
+
+<div class="layout">
+  <aside>
+    <span class="nav-label">Autenticación</span>
+    <button class="nav-item active" onclick="nav('config')">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93A10 10 0 0 0 4.93 19.07M12 2v2M12 20v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M2 12h2M20 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+      Configuración
+    </button>
+    <button class="nav-item" onclick="nav('register')">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
+      Registrarse
+    </button>
+
+    <span class="nav-label">Tareas</span>
+    <button class="nav-item" onclick="nav('list')">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+      Mis tareas
+    </button>
+    <button class="nav-item" onclick="nav('create')">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      Nueva tarea
+    </button>
+    <button class="nav-item" onclick="nav('get')">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      Buscar por ID
+    </button>
+    <button class="nav-item" onclick="nav('edit')">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+      Editar tarea
+    </button>
+    <button class="nav-item" onclick="nav('delete')">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+      Eliminar tarea
+    </button>
+  </aside>
+
+  <main>
+
+    <!-- CONFIG -->
+    <div id="page-config" class="page active">
+      <div class="page-header">
+        <div class="page-title">Configuración</div>
+        <div class="page-sub">Ajusta la conexión y credenciales de la API</div>
+      </div>
+      <div class="card">
+        <div class="card-title">Servidor</div>
+        <div class="form-group">
+          <label>URL base de la API</label>
+          <input id="cfg-url" type="text" value="http://localhost:8080" placeholder="http://localhost:8080"/>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">Credenciales (Basic Auth)</div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Usuario</label>
+            <input id="cfg-user" type="text" value="prueba1" placeholder="username"/>
+          </div>
+          <div class="form-group">
+            <label>Contraseña</label>
+            <input id="cfg-pass" type="password" value="password123" placeholder="••••••••"/>
+          </div>
+        </div>
+        <button class="btn btn-primary" onclick="saveConfig()">Guardar configuración</button>
+      </div>
+      <div class="card" style="border-color:rgba(200,240,74,0.15);background:var(--accent-dim2)">
+        <div class="card-title" style="color:var(--accent)">Nota sobre CORS</div>
+        <p style="font-size:14px;color:var(--text-2);line-height:1.6">Para que esta app funcione desde el navegador, Spring Boot debe permitir peticiones CORS. Añade <code style="font-family:'DM Mono',monospace;background:var(--surface2);padding:2px 6px;border-radius:4px;font-size:12px">@CrossOrigin(origins = "*")</code> en tu controlador o configúralo globalmente en <code style="font-family:'DM Mono',monospace;background:var(--surface2);padding:2px 6px;border-radius:4px;font-size:12px">WebMvcConfigurer</code>.</p>
+      </div>
+    </div>
+
+    <!-- REGISTER -->
+    <div id="page-register" class="page">
+      <div class="page-header">
+        <div class="page-title">Registrarse</div>
+        <div class="page-sub">Crea un nuevo usuario en la API</div>
+      </div>
+      <div class="endpoint"><span class="method-tag POST">POST</span>/auth/register</div>
+      <div class="card">
+        <div class="form-group"><label>Nombre de usuario</label><input id="r-user" type="text" value="prueba1" placeholder="username"/></div>
+        <div class="form-group"><label>Email</label><input id="r-email" type="email" value="prueba1@example.com" placeholder="email@ejemplo.com"/></div>
+        <div class="form-group"><label>Contraseña</label><input id="r-pass" type="password" value="password123" placeholder="••••••••"/></div>
+        <button class="btn btn-primary" onclick="doRegister()">Crear cuenta</button>
+      </div>
+      <div id="res-register"></div>
+    </div>
+
+    <!-- LIST -->
+    <div id="page-list" class="page">
+      <div class="page-header">
+        <div class="page-title">Mis tareas</div>
+        <div class="page-sub">Todas las tareas del usuario autenticado</div>
+      </div>
+      <div class="endpoint"><span class="method-tag GET">GET</span>/task/</div>
+      <button class="btn btn-primary" onclick="doList()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+        Recargar tareas
+      </button>
+      <div id="tasks-list"></div>
+      <div id="res-list"></div>
+    </div>
+
+    <!-- CREATE -->
+    <div id="page-create" class="page">
+      <div class="page-header">
+        <div class="page-title">Nueva tarea</div>
+        <div class="page-sub">Crea una tarea para el usuario autenticado</div>
+      </div>
+      <div class="endpoint"><span class="method-tag POST">POST</span>/task/</div>
+      <div class="card">
+        <div class="form-group"><label>Título</label><input id="c-title" type="text" placeholder="Ej: Terminar informe mensual"/></div>
+        <div class="form-group"><label>Descripción</label><textarea id="c-desc" placeholder="Descripción detallada de la tarea..."></textarea></div>
+        <div class="form-group"><label>Deadline (ISO 8601)</label><input id="c-deadline" type="text" value="2026-12-31T18:30:00" placeholder="2026-12-31T18:30:00"/></div>
+        <button class="btn btn-primary" onclick="doCreate()">Crear tarea</button>
+      </div>
+      <div id="res-create"></div>
+    </div>
+
+    <!-- GET BY ID -->
+    <div id="page-get" class="page">
+      <div class="page-header">
+        <div class="page-title">Buscar por ID</div>
+        <div class="page-sub">Obtén los detalles de una tarea específica</div>
+      </div>
+      <div class="endpoint"><span class="method-tag GET">GET</span>/task/{id}</div>
+      <div class="card">
+        <div class="form-group"><label>ID de la tarea</label><input id="g-id" type="number" value="1" style="max-width:160px"/></div>
+        <button class="btn btn-primary" onclick="doGetById()">Buscar</button>
+      </div>
+      <div id="res-get"></div>
+    </div>
+
+    <!-- EDIT -->
+    <div id="page-edit" class="page">
+      <div class="page-header">
+        <div class="page-title">Editar tarea</div>
+        <div class="page-sub">Modifica los datos de una tarea existente</div>
+      </div>
+      <div class="endpoint"><span class="method-tag PUT">PUT</span>/task/{id}</div>
+      <div class="card">
+        <div class="form-group"><label>ID de la tarea</label><input id="e-id" type="number" value="1" style="max-width:160px"/></div>
+        <div class="divider"></div>
+        <div class="form-group"><label>Nuevo título</label><input id="e-title" type="text" placeholder="Nuevo título"/></div>
+        <div class="form-group"><label>Nueva descripción</label><textarea id="e-desc" placeholder="Nueva descripción..."></textarea></div>
+        <div class="form-group"><label>Nuevo deadline (ISO 8601)</label><input id="e-deadline" type="text" placeholder="2026-12-31T18:30:00"/></div>
+        <button class="btn btn-primary" onclick="doEdit()">Guardar cambios</button>
+      </div>
+      <div id="res-edit"></div>
+    </div>
+
+    <!-- DELETE -->
+    <div id="page-delete" class="page">
+      <div class="page-header">
+        <div class="page-title">Eliminar tarea</div>
+        <div class="page-sub">Borra permanentemente una tarea</div>
+      </div>
+      <div class="endpoint"><span class="method-tag DELETE">DELETE</span>/task/{id}</div>
+      <div class="card" style="border-color:rgba(240,96,96,0.2)">
+        <div class="form-group"><label>ID de la tarea a eliminar</label><input id="d-id" type="number" value="1" style="max-width:160px"/></div>
+        <button class="btn btn-danger" onclick="doDelete()">Eliminar tarea</button>
+      </div>
+      <div id="res-delete"></div>
+    </div>
+
+  </main>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ── STATE ──
+let state = {
+  baseUrl: 'http://localhost:8080',
+  user: 'prueba1',
+  pass: 'password123',
+  authed: false
+};
+
+// ── NAV ──
+function nav(page) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-' + page).classList.add('active');
+  event.currentTarget.classList.add('active');
+}
+
+// ── CONFIG ──
+function saveConfig() {
+  state.baseUrl = document.getElementById('cfg-url').value.replace(/\/$/, '');
+  state.user = document.getElementById('cfg-user').value;
+  state.pass = document.getElementById('cfg-pass').value;
+  state.authed = !!(state.user && state.pass);
+  updateAuthBadge();
+  toast('Configuración guardada', 'ok');
+}
+
+function updateAuthBadge() {
+  const el = document.getElementById('auth-status');
+  const uel = document.getElementById('auth-user');
+  const logoutBtn = document.getElementById('logout-btn');
+  if (state.authed) {
+    el.textContent = 'Autenticado';
+    el.className = 'badge badge-on';
+    uel.textContent = state.user;
+    logoutBtn.style.display = 'inline-flex';
+  } else {
+    el.textContent = 'Sin sesión';
+    el.className = 'badge badge-off';
+    uel.textContent = '';
+    logoutBtn.style.display = 'none';
+  }
+}
+
+function doLogout() {
+  state.user = '';
+  state.pass = '';
+  state.authed = false;
+  document.getElementById('cfg-user').value = '';
+  document.getElementById('cfg-pass').value = '';
+  updateAuthBadge();
+  // Navegar a configuración
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-config').classList.add('active');
+  document.querySelectorAll('.nav-item')[0].classList.add('active');
+  toast('Sesión cerrada', 'ok');
+}
+
+// ── HTTP ──
+function getAuth() {
+  return 'Basic ' + btoa(state.user + ':' + state.pass);
+}
+
+async function api(method, path, body, auth = true) {
+  const headers = { 'Content-Type': 'application/json' };
+  if (auth) headers['Authorization'] = getAuth();
+  try {
+    const res = await fetch(state.baseUrl + path, {
+      method, headers,
+      body: body ? JSON.stringify(body) : undefined
+    });
+    let data;
+    const ct = res.headers.get('content-type') || '';
+    try { data = ct.includes('json') ? await res.json() : await res.text(); }
+    catch { data = '(sin cuerpo)'; }
+    return { status: res.status, data, ok: res.ok };
+  } catch(e) {
+    return { status: 0, data: 'Error de red: ' + e.message + '\n\nVerifica:\n• La API está corriendo en ' + state.baseUrl + '\n• CORS está habilitado en Spring Boot', ok: false };
+  }
+}
+
+// ── RENDER ──
+function renderResponse(id, { status, data, ok }) {
+  const label = status === 0 ? 'Error de red' : 'HTTP ' + status;
+  const body = typeof data === 'string' ? data : JSON.stringify(data, null, 2);
+  document.getElementById(id).innerHTML =
+    `<div class="response-wrap">
+      <div class="response-bar ${ok ? 'ok' : 'err'}">
+        <span>${ok ? '✓' : '✗'} ${label}</span>
+        <span>${new Date().toLocaleTimeString('es-ES')}</span>
+      </div>
+      <div class="response-body">${esc(body)}</div>
+    </div>`;
+}
+
+function loading(id) {
+  document.getElementById(id).innerHTML =
+    `<div class="loading-row"><div class="spinner"></div> Enviando petición...</div>`;
+}
+
+function esc(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// ── TOAST ──
+let toastTimer;
+function toast(msg, type = 'ok') {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'show toast-' + type;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.className = '', 2800);
+}
+
+// ── REGISTER ──
+async function doRegister() {
+  loading('res-register');
+  const body = {
+    username: document.getElementById('r-user').value,
+    email: document.getElementById('r-email').value,
+    password: document.getElementById('r-pass').value
+  };
+  const res = await api('POST', '/auth/register', body, false);
+  renderResponse('res-register', res);
+  if (res.ok) toast('Usuario registrado', 'ok');
+  else toast('Error al registrar', 'err');
+}
+
+// ── LIST ──
+async function doList() {
+  document.getElementById('tasks-list').innerHTML =
+    `<div class="loading-row"><div class="spinner"></div> Cargando tareas...</div>`;
+  document.getElementById('res-list').innerHTML = '';
+  const res = await api('GET', '/task/');
+  renderResponse('res-list', res);
+  if (res.ok && Array.isArray(res.data)) renderTasks(res.data);
+  else document.getElementById('tasks-list').innerHTML = '';
+}
+
+function renderTasks(tasks) {
+  if (!tasks.length) {
+    document.getElementById('tasks-list').innerHTML =
+      `<div class="empty-state"><div class="empty-icon">◻</div><div class="empty-text">No hay tareas. ¡Crea una!</div></div>`;
+    return;
+  }
+  document.getElementById('tasks-list').innerHTML =
+    `<div class="tasks-grid">${tasks.map(t => `
+      <div class="task-card">
+        <div class="task-num">#${t.id}</div>
+        <div class="task-body">
+          <div class="task-title">${esc(t.title || '')}</div>
+          ${t.description ? `<div class="task-desc">${esc(t.description)}</div>` : ''}
+          ${t.deadline ? `<div class="task-deadline">⏰ ${esc(t.deadline)}</div>` : ''}
+        </div>
+        <div class="task-actions">
+          <button class="btn btn-ghost btn-sm" onclick="prefillEdit(${t.id},'${esc(t.title||'')}','${esc(t.description||'')}','${t.deadline||''}')">Editar</button>
+          <button class="btn btn-danger btn-sm" onclick="prefillDelete(${t.id})">Borrar</button>
+        </div>
+      </div>`).join('')}</div>`;
+}
+
+function prefillEdit(id, title, desc, deadline) {
+  document.getElementById('e-id').value = id;
+  document.getElementById('e-title').value = title;
+  document.getElementById('e-desc').value = desc;
+  document.getElementById('e-deadline').value = deadline;
+  document.querySelectorAll('.nav-item')[6].click();
+}
+function prefillDelete(id) {
+  document.getElementById('d-id').value = id;
+  document.querySelectorAll('.nav-item')[7].click();
+}
+
+// ── CREATE ──
+async function doCreate() {
+  loading('res-create');
+  const res = await api('POST', '/task/', {
+    title: document.getElementById('c-title').value,
+    description: document.getElementById('c-desc').value,
+    deadline: document.getElementById('c-deadline').value
+  });
+  renderResponse('res-create', res);
+  if (res.ok) toast('Tarea creada', 'ok'); else toast('Error al crear tarea', 'err');
+}
+
+// ── GET BY ID ──
+async function doGetById() {
+  loading('res-get');
+  const id = document.getElementById('g-id').value;
+  const res = await api('GET', '/task/' + id);
+  renderResponse('res-get', res);
+}
+
+// ── EDIT ──
+async function doEdit() {
+  loading('res-edit');
+  const id = document.getElementById('e-id').value;
+  const res = await api('PUT', '/task/' + id, {
+    title: document.getElementById('e-title').value,
+    description: document.getElementById('e-desc').value,
+    deadline: document.getElementById('e-deadline').value
+  });
+  renderResponse('res-edit', res);
+  if (res.ok) toast('Tarea actualizada', 'ok'); else toast('Error al editar', 'err');
+}
+
+// ── DELETE ──
+async function doDelete() {
+  loading('res-delete');
+  const id = document.getElementById('d-id').value;
+  const res = await api('DELETE', '/task/' + id);
+  renderResponse('res-delete', res);
+  if (res.ok) toast('Tarea eliminada', 'ok'); else toast('Error al eliminar', 'err');
+}
+
+// ── INIT ──
+saveConfig();
+</script>
+</body>
+</html>
